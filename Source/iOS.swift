@@ -24,9 +24,14 @@ public indirect enum PresentationStyle {
         presented: UIViewController,
         completed: Completed) -> Void)
     case InNavigationController(PresentationStyle)
+    case ReplaceRootController
 }
 
 public typealias PresentationSetup = (UIViewController, Parameters, Data?) -> Void
+
+public typealias BackwardSetup = (UIViewController, String, Parameters, Data?) -> Void
+
+public typealias BackwardHandler = (String, PresentationStyle, UIViewController, Completed) -> Void
 
 public protocol RoutingPresentationSetup {
     func setup(route: String, parameters: Parameters, data: Data?)
@@ -107,6 +112,18 @@ extension UIViewController : ControllerIterator {
     }
 }
 
+internal struct HistoricalRoute {
+    let route: String
+    let parameters: Parameters
+    let backwardSetup: BackwardSetup?
+    let backwardHandler: BackwardHandler?
+    let style: PresentationStyle
+    weak var vc: UIViewController!
+
+}
+
+var historicalRoutes = [HistoricalRoute]()
+
 public extension Routing {
     /**
      Associates a view controller presentation to a string pattern. A Routing instance present the
@@ -137,6 +154,8 @@ public extension Routing {
                     owner: RouteOwner? = nil,
                     source: ControllerSource,
                     style: PresentationStyle = .Show,
+                    backwardHandler: BackwardHandler? = nil,
+                    backwardSetup: BackwardSetup? = nil,
                     setup: PresentationSetup? = nil) -> RouteUUID {
         let routeHandler: RouteHandler = { [unowned self] (route, parameters, data, completed) in
             guard let root = UIApplication.sharedApplication().keyWindow?.rootViewController else {
@@ -155,9 +174,48 @@ public extension Routing {
             }
 
             strongSelf.showController(vc, from: presenter, with: style, completion: completed)
+
+            let route = HistoricalRoute(route: route, parameters: parameters, backwardSetup: backwardSetup, backwardHandler: backwardHandler, style: style, vc: vc)
+
+            if case PresentationStyle.ReplaceRootController = style {
+                historicalRoutes.removeAll()
+            }
+
+            historicalRoutes.append(route)
         }
 
         return self.map(pattern, tags: tags, owner: owner, queue: dispatch_get_main_queue(), handler: routeHandler)
+    }
+
+    public func goBack(data: Data?) {
+        guard let route = historicalRoutes.dropLast().last?.route else { return }
+
+        goBack(route, data: data)
+    }
+
+    public func goBack(route: String, data: Data?) {
+        guard historicalRoutes.count > 1,
+            let currentRoute = historicalRoutes.last,
+            let indexOfDestinationRoute = historicalRoutes.indexOf({ $0.route == route }) else { return }
+
+        let destinationRoute = historicalRoutes[indexOfDestinationRoute]
+
+        var routes = Array(historicalRoutes.suffixFrom(indexOfDestinationRoute))
+
+        func call(_routes: [HistoricalRoute], finished: (() -> Void)?) {
+            if let _route = _routes.last where _route.route != route {
+                _route.backwardHandler?(destinationRoute.route, _route.style, _route.vc) {
+                    call(Array(_routes.dropLast()), finished: finished)
+                }
+            } else {
+                finished?()
+            }
+        }
+
+        call(routes) {
+            historicalRoutes.removeLast(historicalRoutes.count-indexOfDestinationRoute-1)
+            destinationRoute.backwardSetup?(destinationRoute.vc, currentRoute.route, currentRoute.parameters, data)
+        }
     }
 
     private func controller(from source: ControllerSource) -> UIViewController {
@@ -201,6 +259,8 @@ public extension Routing {
                            with: style,
                            completion: completion)
             break
+        case .ReplaceRootController:
+            UIApplication.sharedApplication().keyWindow?.rootViewController = presented
         }
     }
 }

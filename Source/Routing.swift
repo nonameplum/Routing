@@ -16,16 +16,19 @@ public final class Routing: RouteOwner {
     public subscript(tags: String...) -> Routing {
         get {
             let set = Set(tags)
-            return Routing(routes: self.routes.filter({ set.intersect($0.tags).isEmpty == false }), targetQueue: self.routingQueue)
+            return Routing(routes: self.routes.filter({ set.intersect($0.tags).isEmpty == false }), targetQueue: nil)
         }
     }
 
     public init() {}
 
-    private convenience init(routes: [Route], targetQueue: dispatch_queue_t) {
+    private convenience init(routes: [Route], targetQueue: dispatch_queue_t?) {
         self.init()
         self.routes = routes
-        dispatch_set_target_queue(self.routingQueue, targetQueue)
+
+        if let targetQueue = targetQueue {
+            dispatch_set_target_queue(self.routingQueue, targetQueue)
+        }
     }
 
     /**
@@ -54,7 +57,7 @@ public final class Routing: RouteOwner {
                     owner: RouteOwner? = nil,
                     handler: RouteHandler) -> RouteUUID {
         let route = Route(pattern, tags: tags, owner: owner ?? self, queue: queue, handler: handler)
-        dispatch_async(accessQueue) {
+        dispatch_async(accessQueue) { [unowned self] in
             self.routes.insert(route, atIndex: 0)
         }
         return route.uuid
@@ -87,7 +90,7 @@ public final class Routing: RouteOwner {
                       queue: dispatch_queue_t = dispatch_get_main_queue(),
                       handler: ProxyHandler) -> RouteUUID {
         let route = Route(pattern, tags: tags, owner: owner ?? self, queue: queue, handler: handler)
-        dispatch_async(accessQueue) {
+        dispatch_async(accessQueue) { [unowned self] in
             self.routes.insert(route, atIndex: 0)
         }
         return route.uuid
@@ -162,14 +165,14 @@ public final class Routing: RouteOwner {
      */
 
     public func disposeOf(route: RouteUUID) {
-        dispatch_async(accessQueue) {
+        dispatch_async(accessQueue) { [unowned self] in
             self.routes = self.routes.filter { $0.uuid != route }
         }
     }
 
     private func process(searchPath: String,
                          parameters: Parameters,
-                         data: Data,
+                         data: Data?,
                          matching route: Route,
                                   within routes: [Route]) {
         let semaphore = dispatch_semaphore_create(0)
@@ -177,7 +180,7 @@ public final class Routing: RouteOwner {
         let zipped = zip(routes, routes.map { $0.handler })
         for case let (proxy, .Proxy(handler)) in zipped
             where proxy.matches(searchPath) {
-                dispatch_async(proxy.queue) {
+                dispatch_async(proxy.queue) { [unowned self] in
                     handler(searchPath, parameters, data) { (proxiedPath, proxiedParameters, proxiedData) in
                         newSearchPath = proxiedPath
                         newParameters = proxiedParameters
@@ -215,7 +218,7 @@ public final class Routing: RouteOwner {
         }
 
         if case let .Route(handler) = route.handler {
-            dispatch_async(route.queue) {
+            dispatch_async(route.queue) { [unowned self] in
                 handler(searchPath, parameters, data) {
                     dispatch_semaphore_signal(semaphore)
                 }

@@ -188,12 +188,16 @@ public extension Routing {
     }
 
     public func goBack(data: Data?) {
+        historicalRoutes = historicalRoutes.filter { $0.vc != nil }
+
         guard let route = historicalRoutes.dropLast().last?.route else { return }
 
         goBack(route, data: data)
     }
 
     public func goBack(route: String, data: Data?) {
+        historicalRoutes = historicalRoutes.filter { $0.vc != nil }
+
         guard historicalRoutes.count > 1,
             let currentRoute = historicalRoutes.last,
             let indexOfDestinationRoute = historicalRoutes.indexOf({ $0.route == route }) else { return }

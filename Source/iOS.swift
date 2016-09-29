@@ -194,14 +194,15 @@ public class UIKitRouting: Routing {
                 while let nextVC = presenter.nextViewController() {
                     presenter = nextVC
                 }
-                
-                strongSelf.showController(vc, from: presenter, with: style, completion: completed)
             } else {
-                self.window.rootViewController = vc
+                presenter = UIViewController()
+                self.window.rootViewController = presenter
                 if !self.window.keyWindow {
                     self.window.makeKeyAndVisible()
                 }
             }
+            
+            strongSelf.showController(vc, from: presenter, with: style, completion: completed)
             
             let route = HistoricalRoute(route: route, parameters: parameters, backwardSetup: backwardSetup, backwardHandler: backwardHandler, style: style, vc: vc)
             

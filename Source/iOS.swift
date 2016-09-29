@@ -132,7 +132,7 @@ public class UIKitRouting: Routing {
         super.init()
     }
     
-    private convenience init(window: UIWindow, routes: [Route], targetQueue: dispatch_queue_t?) {
+    private convenience init(window: UIWindow, historicalRoutes: [HistoricalRoute], routes: [Route], targetQueue: dispatch_queue_t?) {
         self.init(window: window)
         self.routes = routes
         
@@ -144,7 +144,7 @@ public class UIKitRouting: Routing {
     public override subscript(tags: String...) -> UIKitRouting {
         get {
             let set = Set(tags)
-            return UIKitRouting(window: self.window, routes: self.routes.filter({ set.intersect($0.tags).isEmpty == false }), targetQueue: nil)
+            return UIKitRouting(window: self.window, historicalRoutes: self.historicalRoutes, routes: self.routes.filter({ set.intersect($0.tags).isEmpty == false }), targetQueue: nil)
         }
     }
     

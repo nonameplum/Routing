@@ -8,7 +8,7 @@
 
 import Foundation
 
-public final class Routing: RouteOwner {
+public class Routing: RouteOwner {
     private var routes: [Route] = [Route]()
     private var accessQueue = dispatch_queue_create("Routing Access Queue", DISPATCH_QUEUE_SERIAL)
     private var routingQueue = dispatch_queue_create("Routing Queue", DISPATCH_QUEUE_SERIAL)
@@ -180,7 +180,7 @@ public final class Routing: RouteOwner {
         let zipped = zip(routes, routes.map { $0.handler })
         for case let (proxy, .Proxy(handler)) in zipped
             where proxy.matches(searchPath) {
-                dispatch_async(proxy.queue) { [unowned self] in
+                dispatch_async(proxy.queue) {
                     handler(searchPath, parameters, data) { (proxiedPath, proxiedParameters, proxiedData) in
                         newSearchPath = proxiedPath
                         newParameters = proxiedParameters
@@ -218,7 +218,7 @@ public final class Routing: RouteOwner {
         }
 
         if case let .Route(handler) = route.handler {
-            dispatch_async(route.queue) { [unowned self] in
+            dispatch_async(route.queue) {
                 handler(searchPath, parameters, data) {
                     dispatch_semaphore_signal(semaphore)
                 }

@@ -9,9 +9,11 @@
 import UIKit
 import Routing
 
-public let router = Routing()
+public var router: UIKitRouting!
 
-public func registerRoutes() {
+public func registerRoutes(for window: UIWindow) {
+    router = UIKitRouting(window: window)
+    
     let presentationSetup: PresentationSetup = { vc, _, _ in
         vc.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Cancel,
                                                               target: vc,

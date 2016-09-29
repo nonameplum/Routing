@@ -123,13 +123,29 @@ internal struct HistoricalRoute {
 
 public class UIKitRouting: Routing {
     
-    private let window: UIWindow
+    private weak var window: UIWindow!
     internal var historicalRoutes = [HistoricalRoute]()
     
     public init(window: UIWindow) {
         self.window = window
         
         super.init()
+    }
+    
+    private convenience init(window: UIWindow, routes: [Route], targetQueue: dispatch_queue_t?) {
+        self.init(window: window)
+        self.routes = routes
+        
+        if let targetQueue = targetQueue {
+            dispatch_set_target_queue(self.routingQueue, targetQueue)
+        }
+    }
+    
+    public override subscript(tags: String...) -> UIKitRouting {
+        get {
+            let set = Set(tags)
+            return UIKitRouting(window: self.window, routes: self.routes.filter({ set.intersect($0.tags).isEmpty == false }), targetQueue: nil)
+        }
     }
     
     /**

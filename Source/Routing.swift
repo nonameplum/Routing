@@ -9,9 +9,9 @@
 import Foundation
 
 public class Routing: RouteOwner {
-    private var routes: [Route] = [Route]()
-    private var accessQueue = dispatch_queue_create("Routing Access Queue", DISPATCH_QUEUE_SERIAL)
-    private var routingQueue = dispatch_queue_create("Routing Queue", DISPATCH_QUEUE_SERIAL)
+    internal var routes: [Route] = [Route]()
+    internal var accessQueue = dispatch_queue_create("Routing Access Queue", DISPATCH_QUEUE_SERIAL)
+    internal var routingQueue = dispatch_queue_create("Routing Queue", DISPATCH_QUEUE_SERIAL)
 
     public subscript(tags: String...) -> Routing {
         get {

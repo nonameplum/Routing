@@ -135,6 +135,7 @@ public class UIKitRouting: Routing {
     private convenience init(window: UIWindow, historicalRoutes: [HistoricalRoute], routes: [Route], targetQueue: dispatch_queue_t?) {
         self.init(window: window)
         self.routes = routes
+        self.historicalRoutes = historicalRoutes
         
         if let targetQueue = targetQueue {
             dispatch_set_target_queue(self.routingQueue, targetQueue)

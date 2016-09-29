@@ -199,7 +199,7 @@ public class UIKitRouting: Routing {
             } else {
                 self.window.rootViewController = vc
                 if !self.window.keyWindow {
-                    self.window.makeKeyWindow()
+                    self.window.makeKeyAndVisible()
                 }
             }
             

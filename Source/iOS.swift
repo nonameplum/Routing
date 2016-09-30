@@ -43,7 +43,7 @@ public extension UINavigationController {
             self.pushViewController(vc, animated: animated)
         }
     }
-
+    
     public func popViewControllerAnimated(animated: Bool, completion: Completed) -> UIViewController? {
         var vc: UIViewController?
         self.commit(completion) {
@@ -51,7 +51,7 @@ public extension UINavigationController {
         }
         return vc
     }
-
+    
     public func popToViewControllerAnimated(viewController: UIViewController, animated: Bool, completion: Completed) -> [UIViewController]? {
         var vc: [UIViewController]?
         self.commit(completion) {
@@ -59,7 +59,7 @@ public extension UINavigationController {
         }
         return vc
     }
-
+    
     public func popToRootViewControllerAnimated(animated: Bool, completion: Completed) -> [UIViewController]? {
         var vc: [UIViewController]?
         self.commit(completion) {
@@ -75,13 +75,13 @@ public extension UIViewController {
             self.showViewController(vc, sender: sender)
         }
     }
-
+    
     public func showDetailViewController(vc: UIViewController, sender: AnyObject?, completion: Completed) {
         self.commit(completion) {
             self.showDetailViewController(vc, sender: sender)
         }
     }
-
+    
     private func commit(completed: Completed, transition: () -> Void) {
         CATransaction.begin()
         CATransaction.setCompletionBlock(completed)
@@ -130,23 +130,6 @@ public class UIKitRouting: Routing {
         self.window = window
         
         super.init()
-    }
-    
-    private convenience init(window: UIWindow, historicalRoutes: [HistoricalRoute], routes: [Route], targetQueue: dispatch_queue_t?) {
-        self.init(window: window)
-        self.routes = routes
-        self.historicalRoutes = historicalRoutes
-        
-        if let targetQueue = targetQueue {
-            dispatch_set_target_queue(self.routingQueue, targetQueue)
-        }
-    }
-    
-    public override subscript(tags: String...) -> UIKitRouting {
-        get {
-            let set = Set(tags)
-            return UIKitRouting(window: self.window, historicalRoutes: self.historicalRoutes, routes: self.routes.filter({ set.intersect($0.tags).isEmpty == false }), targetQueue: nil)
-        }
     }
     
     /**
@@ -246,8 +229,11 @@ public class UIKitRouting: Routing {
             }
         }
         
-        call(routes) { [unowned self] in
-            self.historicalRoutes.removeLast(self.historicalRoutes.count - indexOfDestinationRoute - 1)
+        call(routes) { [weak self] in
+            if let strongSelf = self {
+                strongSelf.historicalRoutes.removeLast(strongSelf.historicalRoutes.count - indexOfDestinationRoute - 1)
+            }
+            
             destinationRoute.backwardSetup?(destinationRoute.vc, currentRoute.route, currentRoute.parameters, data)
         }
     }

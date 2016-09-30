@@ -18,7 +18,7 @@ public typealias Data = Any
 
 /**
  The closure type associated with #map
-
+ 
  - Parameter Parameters:  Any query parameters or dynamic segments found in the URL
  - Parameter Data: Any data that could be passed with a routing
  - Parameter Completed: Must be called for Routing to continue processing other routes with #open
@@ -29,7 +29,7 @@ public typealias Completed = () -> Void
 
 /**
  The closure type associated with #proxy
-
+ 
  - Parameter String:  The route being opened
  - Parameter Parameters:  Any query parameters or dynamic segments found in the URL
  - Parameter Data: Any data that could be passed with a routing
@@ -46,7 +46,7 @@ internal struct Route {
         case Route(RouteHandler)
         case Proxy(ProxyHandler)
     }
-
+    
     internal let uuid = { NSUUID().UUIDString }()
     internal let pattern: String
     internal let tags: [String]
@@ -54,7 +54,7 @@ internal struct Route {
     internal let queue: dispatch_queue_t
     internal let handler: HandlerType
     private let dynamicSegments: [String]
-
+    
     private init(_ pattern: String, tags: [String], owner: RouteOwner, queue: dispatch_queue_t, handler: HandlerType) {
         var pattern = pattern
         var dynamicSegments = [String]()
@@ -65,7 +65,7 @@ internal struct Route {
             dynamicSegments.append(segment)
             pattern.replaceRange(range, with: "([^/]+)")
         }
-
+        
         self.pattern = pattern
         self.tags = tags
         self.owner = owner
@@ -73,34 +73,34 @@ internal struct Route {
         self.handler = handler
         self.dynamicSegments = dynamicSegments
     }
-
+    
     internal init(_ pattern: String, tags: [String], owner: RouteOwner, queue: dispatch_queue_t, handler: RouteHandler) {
         self.init(pattern, tags: tags, owner: owner, queue: queue, handler: .Route(handler))
     }
-
+    
     internal init(_ pattern: String, tags: [String], owner: RouteOwner, queue: dispatch_queue_t, handler: ProxyHandler) {
         self.init(pattern, tags: tags, owner: owner, queue: queue, handler: .Proxy(handler))
     }
-
+    
     internal func matches(route: String) -> Bool {
         return _matches(route) != nil
     }
-
+    
     internal func matches(route: String, inout parameters: Parameters) -> Bool {
         guard let matches = _matches(route) else {
             return false
         }
-
+        
         if dynamicSegments.count > 0 && dynamicSegments.count == matches.numberOfRanges - 1 {
             for i in (1 ..< matches.numberOfRanges) {
                 parameters[dynamicSegments[i-1]] = (route as NSString)
                     .substringWithRange(matches.rangeAtIndex(i))
             }
         }
-
+        
         return true
     }
-
+    
     private func _matches(route: String) -> NSTextCheckingResult? {
         return (try? NSRegularExpression(pattern: pattern, options: .CaseInsensitive))
             .flatMap {

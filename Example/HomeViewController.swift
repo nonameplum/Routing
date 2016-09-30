@@ -27,14 +27,14 @@ extension HomeViewController {
     override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         switch Row(rawValue: indexPath.row)! {
         case .Login:
-            router["Views"].open("routingexample://push/login")
+            router.open("routingexample://push/login")
         case .Logout:
             authenticated = false
             self.tableView.reloadData()
         case .PrivilegedInfo:
-            router["Views"].open("routingexample://push/privilegedinfo", data: ["opened from the home view": NSDate()])
+            router.open("routingexample://push/privilegedinfo", data: ["opened from the home view": NSDate()])
         case .Settings:
-            router["Views"].open("routingexample://push/settings")
+            router.open("routingexample://push/settings")
         }
     }
 }
